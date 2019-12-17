@@ -1,5 +1,5 @@
 {
-    "name": "lifer/taskmanager",
+    "name": "liferthedude/taskmanager",
     "description": ":description",
     "license": "license",
     "authors": [
@@ -9,7 +9,7 @@
             "homepage": "centro.team"
         }
     ],
-    "homepage": "https://github.com/lifer/taskmanager",
+    "homepage": "https://github.com/liferthedude/taskmanager",
     "keywords": ["Laravel", "TaskManager"],
     "require": {
         "illuminate/support": "6.x"
