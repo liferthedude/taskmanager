@@ -49,15 +49,14 @@ abstract class ExecutableTask
         $this->task->setPID(getmypid());
         $this->taskLog = TaskLogFactory::new($this->task);
         $this->addTaskMonologHandler();
-        $this->logDebug("------ TASK STARTED -------");
         try {
             $this->__run();
             $this->completed();
         } catch (\Exception $e) {
             $this->logError($e->getMessage());
+            $this->logError($e->getTraceAsString());
             $this->failed();
         }
-        $this->logDebug("------ TASK FINISHED ------");
         $this->removeTaskMonologHandler();
         
     }

@@ -64,6 +64,7 @@ class TaskManager {
 	public function doWork() {
 		$this->logging_tags = ['TaskManager','DoWork'];
 		$tasks = Task::where("scheduled_at","<=", now())->whereIn("status",[Task::STATUS_SCHEDULED, Task::STATUS_QUEUED])->get();
+
         foreach ($tasks as $task) {
             $ok_to_run = true;
             $tasks_starts_after = $task->getStartsAfter();

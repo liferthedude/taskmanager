@@ -20,7 +20,7 @@ class RunTask extends AbstractJob
      */
     public function __construct(Task $task)
     {
-        $this->logging_tags = ["#{$task->id}",'TaskManager','RunTask'];
+        $this->logging_tags = ['TaskManager','RunTask',"Task #{$task->id}"];
         $this->task = $task;
     }
 

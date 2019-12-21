@@ -19,11 +19,12 @@ class CreateTasksTable extends Migration
         Schema::create('tasks', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('name',100);
+            $table->bigInteger('taskable_id')->nullable();
+            $table->string('taskable_type',50)->nullable();
             $table->enum("status",[Task::STATUS_SCHEDULED, Task::STATUS_QUEUED, Task::STATUS_RUNNING, Task::STATUS_COMPLETED, Task::STATUS_SUSPENDED, Task::STATUS_FAILED, Task::STATUS_KILLED]);
             $table->string("type",100);
             $table->string("config",100)->nullable();
-            $table->bigInteger('campaign_id')->nullable();
-            $table->enum('schedule_type', [Task::SCHEDULE_TYPE_ONCE, Task::SCHEDULE_TYPE_PERIODICALLY]);
+            $table->enum('schedule_type', [Task::SCHEDULE_TYPE_ONCE, Task::SCHEDULE_TYPE_PERIODICALLY, Task::SCHEDULE_TYPE_NONE]);
             $table->datetime('scheduled_at')->nullable();
             $table->mediumInteger('pid')->nullable();
             $table->text('properties')->nullable();

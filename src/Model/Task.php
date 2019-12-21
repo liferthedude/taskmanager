@@ -26,6 +26,7 @@ class Task extends AbstractModel
 
     const SCHEDULE_TYPE_ONCE = 'once';
     const SCHEDULE_TYPE_PERIODICALLY = 'periodically';
+    const SCHEDULE_TYPE_NONE = 'none';
 
     const SCHEDULE_DATE_TYPE_SECOND = 's';
     const SCHEDULE_DATE_TYPE_MINUTE = 'm';
@@ -49,9 +50,9 @@ class Task extends AbstractModel
         'properties' => 'array'
     ];
 
-    public function campaign()
+    public function taskable()
     {
-        return $this->belongsTo('App\Model\Campaign');
+        return $this->morphTo();
     }
 
     public function taskLog()
@@ -91,8 +92,9 @@ class Task extends AbstractModel
         if (!in_array($this->getStatus(),[self::STATUS_SCHEDULED,self::STATUS_QUEUED])) {
             throw new \Exception("Task status is not STATUS_SCHEDULED/STATUS_QUEUED. it shouldn't be running...");
         }
+        $environment = \App::environment();
         $executableTask = $this->getExecutable();
-        if ($executableTask->requiresStandaloneProcess()) {
+        if (($environment != "testing") && $executableTask->requiresStandaloneProcess()) {
             return $executableTask->runStandaloneProcess();
         } else {
             return $executableTask->run();
@@ -217,23 +219,37 @@ class Task extends AbstractModel
     }
 
     public function completed() {
+        $this->refresh();
         $this->status = self::STATUS_COMPLETED;
         $this->pid = null;
         $this->schedule();
+        $this->logDebug("Task completed",["Task #{$this->id}"]);
     }
 
     public function failed() {
+        $this->refresh();
         $this->status = self::STATUS_FAILED;
         $this->pid = null;
         $this->schedule();
+        $this->logDebug("Task failed",["Task #{$this->id}"]);
     }
 
-    public function suspendSchedule() {
+    public function suspend() {
+        $this->refresh();
         if ($this->status != self::STATUS_RUNNING) {
             $this->status = self::STATUS_SUSPENDED;
         }
         $this->scheduled_at = null;
         $this->save();
+        $this->logDebug("Task suspended",["Task #{$this->id}"]);
+    }
+
+    public function stopSchedule() {
+        $this->refresh();
+        $this->schedule_type = self::SCHEDULE_TYPE_NONE;
+        $this->scheduled_at = null;
+        $this->save();
+        $this->logDebug("Task schedule is set to SCHEDULE_TYPE_NONE",["Task #{$this->id}"]);
     }
 
     public function schedule() {
@@ -264,7 +280,11 @@ class Task extends AbstractModel
         }
 
         if (self::STATUS_COMPLETED == $this->status) {
-            if (self::SCHEDULE_TYPE_ONCE == $this->schedule_type) {
+            if (self::SCHEDULE_TYPE_NONE == $this->schedule_type) {
+                $this->scheduled_at = null;
+                $this->save();
+                return true;
+            } elseif (self::SCHEDULE_TYPE_ONCE == $this->schedule_type) {
                 $this->scheduled_at = null;
                 $this->save();
                 return true;
@@ -287,6 +307,8 @@ class Task extends AbstractModel
                     $this->scheduled_at = $this->scheduled_at->addMinutes($properties[self::PROPERTY_SCHEDULE][self::PROPERTY_PERIOD_DESCRIPTION][self::PROPERTY_NUMBER]);
                 } elseif (self::SCHEDULE_DATE_TYPE_SECOND == $properties[self::PROPERTY_SCHEDULE][self::PROPERTY_PERIOD_DESCRIPTION][self::PROPERTY_PERIOD_TYPE]) {
                     $this->scheduled_at = $this->scheduled_at->addSeconds($properties[self::PROPERTY_SCHEDULE][self::PROPERTY_PERIOD_DESCRIPTION][self::PROPERTY_NUMBER]);
+                } elseif (self::SCHEDULE_DATE_TYPE_DAY == $properties[self::PROPERTY_SCHEDULE][self::PROPERTY_PERIOD_DESCRIPTION][self::PROPERTY_PERIOD_TYPE]) {
+                    $this->scheduled_at = $this->scheduled_at->addDays($properties[self::PROPERTY_SCHEDULE][self::PROPERTY_PERIOD_DESCRIPTION][self::PROPERTY_NUMBER]);
                 }
 
                 $this->status = self::STATUS_SCHEDULED;
