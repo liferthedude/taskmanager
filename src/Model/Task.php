@@ -309,6 +309,8 @@ class Task extends AbstractModel
                     $this->scheduled_at = $this->scheduled_at->addSeconds($properties[self::PROPERTY_SCHEDULE][self::PROPERTY_PERIOD_DESCRIPTION][self::PROPERTY_NUMBER]);
                 } elseif (self::SCHEDULE_DATE_TYPE_DAY == $properties[self::PROPERTY_SCHEDULE][self::PROPERTY_PERIOD_DESCRIPTION][self::PROPERTY_PERIOD_TYPE]) {
                     $this->scheduled_at = $this->scheduled_at->addDays($properties[self::PROPERTY_SCHEDULE][self::PROPERTY_PERIOD_DESCRIPTION][self::PROPERTY_NUMBER]);
+                } elseif (self::SCHEDULE_DATE_TYPE_HOUR == $properties[self::PROPERTY_SCHEDULE][self::PROPERTY_PERIOD_DESCRIPTION][self::PROPERTY_PERIOD_TYPE]) {
+                    $this->scheduled_at = $this->scheduled_at->addHours($properties[self::PROPERTY_SCHEDULE][self::PROPERTY_PERIOD_DESCRIPTION][self::PROPERTY_NUMBER]);
                 }
 
                 $this->status = self::STATUS_SCHEDULED;
