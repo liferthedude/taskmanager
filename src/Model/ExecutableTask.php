@@ -53,7 +53,7 @@ abstract class ExecutableTask
             $this->__run();
             $this->completed();
         } catch (\Exception $e) {
-            $this->logError($e->getMessage());
+            $this->logError("Exception: ".get_class($e).": ".$e->getMessage());
             $this->logError($e->getTraceAsString());
             $this->failed();
         }

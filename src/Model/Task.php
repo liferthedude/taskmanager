@@ -230,7 +230,7 @@ class Task extends AbstractModel
         $this->refresh();
         $this->status = self::STATUS_FAILED;
         $this->pid = null;
-        $this->schedule();
+        $this->scheduled_at = null;
         $this->logDebug("Task failed",["Task #{$this->id}"]);
     }
 
@@ -254,7 +254,7 @@ class Task extends AbstractModel
 
     public function schedule() {
         if (in_array($this->status,[self::STATUS_RUNNING, self::STATUS_QUEUED, self::STATUS_SCHEDULED])) {
-            throw new \Exception("already scheduled, shouldn't happen");
+            throw new \Exception("already scheduled or running (status='{$this->status}'), can't be scheduled now");
         }
 
         if (self::STATUS_KILLED == $this->status) {
