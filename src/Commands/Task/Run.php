@@ -14,14 +14,14 @@ class Run extends TaskCommand
      *
      * @var string
      */
-    protected $signature = 'task:run {task_id}';
+    protected $signature = 'task:run {task_id} {--schedule} {--params=}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Run a task as standalone process. Great for long running tasks.';
+    protected $description = 'Run task as standalone process. Great for long running tasks.';
 
     /**
      * Create a new command instance.
@@ -51,7 +51,20 @@ class Run extends TaskCommand
             return false;
         } 
         $this->logDebug("Running task...");
-        $this->task->getExecutable()->run();
+        $executableTask = $this->task->getExecutable();
+        if (!empty($this->option("params"))) {
+            $params = [];
+            $_params = explode(" ", $this->option("params"));
+            foreach ($_params as $_param) {
+                list($key,$value) = explode(":",$_param);
+                $params[$key] = $value;
+            }
+            $executableTask->setParams($params);
+        }
+        $executableTask->run();
+        if (!empty($this->option("schedule"))) {
+            $this->task->schedule();
+        }
         $lock->release();
         $this->info("Done!");
     }

@@ -10,7 +10,6 @@ use Monolog\Logger as Monolog;
 use Monolog\Handler\StreamHandler;
 use Monolog\Formatter\LineFormatter;
 
-
 abstract class ExecutableTask 
 {
 
@@ -19,6 +18,8 @@ abstract class ExecutableTask
 	protected $task;
 
     protected $properties = [];
+
+    protected $params = [];
 
     protected $config = [];
 
@@ -49,16 +50,27 @@ abstract class ExecutableTask
         $this->task->setPID(getmypid());
         $this->taskLog = TaskLogFactory::new($this->task);
         $this->addTaskMonologHandler();
-        try {
-            $this->__run();
-            $this->completed();
-        } catch (\Exception $e) {
-            $this->logError("Exception: ".get_class($e).": ".$e->getMessage());
-            $this->logError($e->getTraceAsString());
+
+        $completed = false;
+        $current_retry = 1;
+
+        while (!$completed && ($current_retry <= config('taskmanager.task_run_retries'))) {
+            $this->logDebug("Running task... retry #{$current_retry}");
+            try {
+                $this->__run();
+                $this->completed();
+                $completed = true;
+            } catch (\Exception $e) {
+                $this->logError("Exception: ".get_class($e).": ".$e->getMessage());
+                $this->logError($e->getTraceAsString());
+            }
+            $current_retry++;
+        }
+
+        if (!$completed) {
             $this->failed();
         }
         $this->removeTaskMonologHandler();
-        
     }
 
     abstract protected function __run();
@@ -75,7 +87,7 @@ abstract class ExecutableTask
 
     public final function runStandaloneProcess() {
     	$base_path = base_path();
-    	return shell_exec("php {$base_path}/artisan task:run {$this->task->id} > /dev/null 2>&1 &");
+    	return shell_exec("php {$base_path}/artisan task:run {$this->task->id} --schedule > /dev/null 2>&1 &");
     }
 
     public function requiresStandaloneProcess() {
@@ -96,4 +108,9 @@ abstract class ExecutableTask
 
     public function getDetails() {}
 
+    public function setParams(array $params) {
+        foreach ($params as $key => $value) {
+            $this->params[$key] = $value;
+        }
+    }
 }

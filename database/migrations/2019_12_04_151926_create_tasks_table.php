@@ -24,7 +24,6 @@ class CreateTasksTable extends Migration
             $table->enum("status",[Task::STATUS_SCHEDULED, Task::STATUS_QUEUED, Task::STATUS_RUNNING, Task::STATUS_COMPLETED, Task::STATUS_SUSPENDED, Task::STATUS_FAILED, Task::STATUS_KILLED]);
             $table->string("type",100);
             $table->string("config",100)->nullable();
-            $table->enum('schedule_type', [Task::SCHEDULE_TYPE_ONCE, Task::SCHEDULE_TYPE_PERIODICALLY, Task::SCHEDULE_TYPE_NONE]);
             $table->datetime('scheduled_at')->nullable();
             $table->mediumInteger('pid')->nullable();
             $table->text('properties')->nullable();

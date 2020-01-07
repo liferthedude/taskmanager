@@ -6,6 +6,8 @@ use Lifer\TaskManager\Model\AbstractModel;
 use Lifer\TaskManager\Services\ExecutableTaskFactory;
 use Lifer\TaskManager\Model\TaskLog;
 use Lifer\TaskManager\Model\TaskException;
+use Illuminate\Support\Arr;
+use Carbon\Carbon;
 
 class Task extends AbstractModel
 {
@@ -22,32 +24,21 @@ class Task extends AbstractModel
 
     const STARTS_AFTER = 'sa';
     const STARTS_TOGETHER_WITH = 'stw';
-    
 
-    const SCHEDULE_TYPE_ONCE = 'once';
-    const SCHEDULE_TYPE_PERIODICALLY = 'periodically';
-    const SCHEDULE_TYPE_NONE = 'none';
+    const SCHEDULE_TYPE_DAILY = 'd';
+    const SCHEDULE_TYPE_HOURLY = 'h';
+    const SCHEDULE_TYPE_EVERY_N_MINUTES = 'nm';
 
-    const SCHEDULE_DATE_TYPE_SECOND = 's';
-    const SCHEDULE_DATE_TYPE_MINUTE = 'm';
-    const SCHEDULE_DATE_TYPE_HOUR = 'h';
-    const SCHEDULE_DATE_TYPE_DAY = 'd';
-    const SCHEDULE_DATE_TYPE_WEEK = 'w';
-    const SCHEDULE_DATE_TYPE_MONTH = 'mth';
-
-    const MAX_PROPERTY_FAILED_RETRIES = 5;
-
-    const PROPERTY_FAILED_RETRIES = 'fr';
     const PROPERTY_SCHEDULE = 'sch';
-    const PROPERTY_PERIOD_DESCRIPTION = 'prd';
-    const PROPERTY_NUMBER = 'n';
-    const PROPERTY_PERIOD_TYPE = 'prt';
-    const PROPERTY_RUNS_NUMBER = 'rn';
-    const PROPERTY_SUCCSESSFUL_RUNS = 'rn';
+    const PROPERTY_SCHEDULE_TYPE = 'sch.t';
+    const PROPERTY_SCHEDULE_AT = 'sch.at';
+    const PROPERTY_SCHEDULE_PERIOD_DURATION = 'sch.pd';
+    const PROPERTY_MAX_RUNS_NUMBER = 'mrn';
+    const PROPERTY_SUCCSESSFUL_RUNS = 'srn';
 
     protected $casts = [
         'scheduled_at' => 'datetime',
-        'properties' => 'array'
+        'properties' => 'array',
     ];
 
     public function taskable()
@@ -66,6 +57,31 @@ class Task extends AbstractModel
 
     public function getConfigName() {
         return $this->config;
+    }
+
+    public function setProperty(string $path, $value) {
+        $properties = $this->properties;
+        if (!is_null($value)) {
+            Arr::set($properties, $path, $value);
+        } else {
+            $path = "'".implode("']['", explode(".", $path))."'";
+            $cmd = 'unset($properties['.$path.']);';
+            eval($cmd);
+        }
+        $this->properties = $properties;
+        return true;
+    }
+
+    public function unsetProperty(string $path) {
+        return $this->setProperty($path, null);
+    }
+
+    public function getProperty(string $path) {
+        return Arr::get($this->properties, $path);
+    }
+
+    public function hasProperty(string $path) {
+        return !empty($this->getProperty($path));
     }
 
     public function setStatus(string $status) {
@@ -89,17 +105,18 @@ class Task extends AbstractModel
     }
 
     public function run() {
-        if (!in_array($this->getStatus(),[self::STATUS_SCHEDULED,self::STATUS_QUEUED])) {
-            throw new \Exception("Task status is not STATUS_SCHEDULED/STATUS_QUEUED. it shouldn't be running...");
+        if ($this->getStatus() == self::STATUS_RUNNING) {
+            throw new \Exception("Task is already running");
         }
         $environment = \App::environment();
         $executableTask = $this->getExecutable();
         if (($environment != "testing") && $executableTask->requiresStandaloneProcess()) {
-            return $executableTask->runStandaloneProcess();
+            $executableTask->runStandaloneProcess();
         } else {
-            return $executableTask->run();
+            $executableTask->run();
+            $this->schedule();
         }
-        
+        return true;
     }
 
     public function getExecutable() {
@@ -112,6 +129,10 @@ class Task extends AbstractModel
 
     public function getScheduledAt() {
         return $this->scheduled_at;
+    }
+
+    public function isScheduled() {
+        return !empty($this->scheduled_at);
     }
 
     public function startsAfter(Task $task) {
@@ -179,7 +200,8 @@ class Task extends AbstractModel
         $taskLog->killed();
 
         $this->status = self::STATUS_KILLED;
-        $this->schedule();
+        $this->save();
+        $this->logDebug("Task killed",["Task #{$this->id}"]);
     }
 
     public function getCurrentRunDuration() {
@@ -218,11 +240,21 @@ class Task extends AbstractModel
         return $taskLog->created_at;
     }
 
+    public function setMaxRunsNumber(int $number) {
+        $this->setProperty(self::PROPERTY_MAX_RUNS_NUMBER, $number);
+        $this->save();
+        return true;
+    }
+
     public function completed() {
         $this->refresh();
-        $this->status = self::STATUS_COMPLETED;
+        if ($this->status != self::STATUS_SUSPENDED) {
+            $this->status = self::STATUS_COMPLETED;
+        }
         $this->pid = null;
-        $this->schedule();
+        $this->scheduled_at = null;
+        $this->setProperty(self::PROPERTY_SUCCSESSFUL_RUNS, (int) $this->getProperty(self::PROPERTY_SUCCSESSFUL_RUNS)+1);
+        $this->save();
         $this->logDebug("Task completed",["Task #{$this->id}"]);
     }
 
@@ -230,102 +262,95 @@ class Task extends AbstractModel
         $this->refresh();
         $this->status = self::STATUS_FAILED;
         $this->pid = null;
-        $this->scheduled_at = null;
-        $this->logDebug("Task failed",["Task #{$this->id}"]);
+        $this->removeSchedule();
+        $this->logError("Task failed",["Task #{$this->id}"]);
     }
 
-    public function suspend() {
+    public function removeSchedule() {
         $this->refresh();
-        if ($this->status != self::STATUS_RUNNING) {
-            $this->status = self::STATUS_SUSPENDED;
-        }
+        $this->unsetProperty(self::PROPERTY_SCHEDULE);
         $this->scheduled_at = null;
         $this->save();
-        $this->logDebug("Task suspended",["Task #{$this->id}"]);
+        $this->logDebug("Task schedule removed",["Task #{$this->id}"]);
     }
 
-    public function stopSchedule() {
-        $this->refresh();
-        $this->schedule_type = self::SCHEDULE_TYPE_NONE;
-        $this->scheduled_at = null;
+    public function scheduleDailyAt(string $time) {
+        list($hours, $minutes) = explode(":",$time);
+        $this->setProperty(self::PROPERTY_SCHEDULE_AT, ['h' => (int) $hours, 'm' => (int) $minutes]);
+        $this->setProperty(self::PROPERTY_SCHEDULE_TYPE, self::SCHEDULE_TYPE_DAILY);
+        $this->schedule();
+        return true;
+    }
+
+    public function scheduleHourlyAt(string $minutes) {
+        $this->setProperty(self::PROPERTY_SCHEDULE_AT, ['m' => (int) $minutes]);
+        $this->setProperty(self::PROPERTY_SCHEDULE_TYPE, self::SCHEDULE_TYPE_HOURLY);
+        $this->schedule();
+        return true;
+    }
+
+    public function scheduleEveryFiveMinutes() {
+        $this->setProperty(self::PROPERTY_SCHEDULE_TYPE, self::SCHEDULE_TYPE_EVERY_N_MINUTES);
+        $this->setProperty(self::PROPERTY_SCHEDULE_PERIOD_DURATION, 5);
+        $this->schedule();
+        return true;
+    }
+
+    public function scheduleAt(Carbon $scheduled_at) {
+        $this->status = self::STATUS_SCHEDULED;
+        $this->scheduled_at = $scheduled_at;
+        $this->logDebug("Task scheduled at ".$this->scheduled_at->toDateTimeString(),["Task #{$this->id}"]);
         $this->save();
-        $this->logDebug("Task schedule is set to SCHEDULE_TYPE_NONE",["Task #{$this->id}"]);
+        return true;
     }
 
     public function schedule() {
-        if (in_array($this->status,[self::STATUS_RUNNING, self::STATUS_QUEUED, self::STATUS_SCHEDULED])) {
-            throw new \Exception("already scheduled or running (status='{$this->status}'), can't be scheduled now");
+
+        if (empty($this->getProperty(self::PROPERTY_SCHEDULE_TYPE))) {
+            return false;
         }
 
-        if (self::STATUS_KILLED == $this->status) {
-            $this->scheduled_at = null;
-            $this->save();
+        if (self::STATUS_SCHEDULED == $this->status) {
             return true;
         }
 
-        if (self::STATUS_FAILED == $this->status) {
-            $properties = $this->properties;
-            if (empty($properties[self::PROPERTY_FAILED_RETRIES])) {
-                $properties[self::PROPERTY_FAILED_RETRIES] = 0;
+        if ($this->hasProperty(self::PROPERTY_MAX_RUNS_NUMBER) && ($this->getProperty(self::PROPERTY_SUCCSESSFUL_RUNS) >= $this->getProperty(self::PROPERTY_MAX_RUNS_NUMBER))) {
+            return false;
+        }
+
+        if (in_array($this->status,[self::STATUS_RUNNING, self::STATUS_QUEUED])) {
+            throw new \Exception("task status='{$this->status}', can't be scheduled now");
+        }
+
+        if (self::SCHEDULE_TYPE_DAILY == $this->getProperty(self::PROPERTY_SCHEDULE_TYPE)) {
+            $at = $this->getProperty(self::PROPERTY_SCHEDULE_AT);
+            if (empty($at)) {
+                $at = ['h'=>0,'m'=>0];
             }
-            $properties[self::PROPERTY_FAILED_RETRIES]++;
-            if ($properties[self::PROPERTY_FAILED_RETRIES] >= (self::MAX_PROPERTY_FAILED_RETRIES)) {
-                $this->scheduled_at = null; 
+            if (now() < now()->startOfDay()->addHours($at['h'])->addMinutes($at['m'])) {
+                $this->scheduled_at = now()->startOfDay()->addHours($at['h'])->addMinutes($at['m']);
             } else {
-                $this->status = self::STATUS_SCHEDULED;
+                $this->scheduled_at = now()->startOfDay()->addDays(1)->addHours($at['h'])->addMinutes($at['m']);
             }
-            $this->properties = $properties;
-            $this->save();
-            return true;
-        }
-
-        if (self::STATUS_COMPLETED == $this->status) {
-            if (self::SCHEDULE_TYPE_NONE == $this->schedule_type) {
-                $this->scheduled_at = null;
-                $this->save();
-                return true;
-            } elseif (self::SCHEDULE_TYPE_ONCE == $this->schedule_type) {
-                $this->scheduled_at = null;
-                $this->save();
-                return true;
-            } elseif (self::SCHEDULE_TYPE_PERIODICALLY == $this->schedule_type) {
-                $properties = $this->properties;
-                if (!empty($this->properties[self::PROPERTY_SCHEDULE][self::PROPERTY_RUNS_NUMBER])) {
-                    if (empty($properties[self::PROPERTY_SUCCSESSFUL_RUNS])) {
-                        $properties[self::PROPERTY_SUCCSESSFUL_RUNS] = 0;
-                    }
-                    $properties[self::PROPERTY_SUCCSESSFUL_RUNS]++;
-                    if ($properties[self::PROPERTY_SUCCSESSFUL_RUNS] >= $properties[self::PROPERTY_SCHEDULE][self::PROPERTY_RUNS_NUMBER]) {
-                        $this->scheduled_at = null;
-                        $this->properties = $properties;
-                        $this->save();
-                        return true;
-                    } 
-
-                }
-                if (self::SCHEDULE_DATE_TYPE_MINUTE == $properties[self::PROPERTY_SCHEDULE][self::PROPERTY_PERIOD_DESCRIPTION][self::PROPERTY_PERIOD_TYPE]) {
-                    $this->scheduled_at = $this->scheduled_at->addMinutes($properties[self::PROPERTY_SCHEDULE][self::PROPERTY_PERIOD_DESCRIPTION][self::PROPERTY_NUMBER]);
-                } elseif (self::SCHEDULE_DATE_TYPE_SECOND == $properties[self::PROPERTY_SCHEDULE][self::PROPERTY_PERIOD_DESCRIPTION][self::PROPERTY_PERIOD_TYPE]) {
-                    $this->scheduled_at = $this->scheduled_at->addSeconds($properties[self::PROPERTY_SCHEDULE][self::PROPERTY_PERIOD_DESCRIPTION][self::PROPERTY_NUMBER]);
-                } elseif (self::SCHEDULE_DATE_TYPE_DAY == $properties[self::PROPERTY_SCHEDULE][self::PROPERTY_PERIOD_DESCRIPTION][self::PROPERTY_PERIOD_TYPE]) {
-                    $this->scheduled_at = $this->scheduled_at->addDays($properties[self::PROPERTY_SCHEDULE][self::PROPERTY_PERIOD_DESCRIPTION][self::PROPERTY_NUMBER]);
-                } elseif (self::SCHEDULE_DATE_TYPE_HOUR == $properties[self::PROPERTY_SCHEDULE][self::PROPERTY_PERIOD_DESCRIPTION][self::PROPERTY_PERIOD_TYPE]) {
-                    $this->scheduled_at = $this->scheduled_at->addHours($properties[self::PROPERTY_SCHEDULE][self::PROPERTY_PERIOD_DESCRIPTION][self::PROPERTY_NUMBER]);
-                }
-
-                $this->status = self::STATUS_SCHEDULED;
-                $this->properties = $properties;
-                $this->save();
-                return true;
+        } elseif (self::SCHEDULE_TYPE_HOURLY == $this->getProperty(self::PROPERTY_SCHEDULE_TYPE)) {
+            $at = $this->getProperty(self::PROPERTY_SCHEDULE_AT);
+            if (empty($at)) {
+                $at = ['m'=>0];
             }
+            if (now() < now()->startOfHour()->addMinutes($at['m'])) {
+                $this->scheduled_at = now()->startOfHour()->addMinutes($at['m']);
+            } else {
+                $this->scheduled_at = now()->startOfHour()->addHours(1)->addMinutes($at['m']);
+            }
+        } elseif (self::SCHEDULE_TYPE_EVERY_N_MINUTES == $this->getProperty(self::PROPERTY_SCHEDULE_TYPE)) {
+                $this->scheduled_at = now()->addMinutes($this->getProperty(self::PROPERTY_SCHEDULE_PERIOD_DURATION));
         } else {
-            if (empty($this->scheduled_at)) {
-                $this->scheduled_at = now();
-            }
-            $this->status = self::STATUS_SCHEDULED;
-            $this->save();
-            return true;
+            throw new \Exception("schedule type not implemented");
         }
-        
+
+        $this->logDebug("Task scheduled at ".$this->scheduled_at->toDateTimeString(),["Task #{$this->id}"]);
+        $this->status = self::STATUS_SCHEDULED;
+        $this->save();
+        return true;
     }
 }
