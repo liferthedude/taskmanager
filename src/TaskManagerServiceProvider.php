@@ -85,7 +85,8 @@ class TaskManagerServiceProvider extends ServiceProvider
             Commands\Task\Fake::class,
             Commands\Task\Kill::class,
             Commands\Task\Log::class,
-            Commands\Task\Run::class
+            Commands\Task\Run::class,
+            Commands\Task\TaskList::class,
         ]);
 
         $this->publishes([
