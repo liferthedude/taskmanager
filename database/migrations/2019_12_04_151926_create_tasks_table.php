@@ -21,7 +21,7 @@ class CreateTasksTable extends Migration
             $table->string('name',100);
             $table->bigInteger('taskable_id')->nullable();
             $table->string('taskable_type',50)->nullable();
-            $table->enum("status",[Task::STATUS_SCHEDULED, Task::STATUS_QUEUED, Task::STATUS_RUNNING, Task::STATUS_COMPLETED, Task::STATUS_SUSPENDED, Task::STATUS_FAILED, Task::STATUS_KILLED]);
+            $table->enum("status",[Task::STATUS_SCHEDULED, Task::STATUS_QUEUED, Task::STATUS_DISPATCHED, Task::STATUS_RUNNING, Task::STATUS_COMPLETED, Task::STATUS_SUSPENDED, Task::STATUS_FAILED, Task::STATUS_KILLED]);
             $table->string("type",100);
             $table->string("config",100)->nullable();
             $table->datetime('scheduled_at')->nullable();

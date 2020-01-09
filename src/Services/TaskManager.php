@@ -87,6 +87,7 @@ class TaskManager {
                 $task->setStatus(Task::STATUS_QUEUED);
             } else {
                 $this->logDebug("dispatched task #{$task->id} ({$task->name})");
+                $task->setStatus(Task::STATUS_DISPATCHED);
                 RunTask::dispatch($task);
             }
         }

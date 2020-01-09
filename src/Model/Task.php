@@ -16,6 +16,7 @@ class Task extends AbstractModel
 
     const STATUS_SCHEDULED = 'scheduled';
     const STATUS_QUEUED = 'queued';
+    const STATUS_DISPATCHED = 'dispatched';
     const STATUS_RUNNING = 'running';
     const STATUS_COMPLETED = 'completed';
     const STATUS_SUSPENDED = 'suspended';
@@ -84,10 +85,15 @@ class Task extends AbstractModel
         return !empty($this->getProperty($path));
     }
 
+    public function setName(string $name) {
+        $this->name = $name;
+    }
+
     public function setStatus(string $status) {
         $allowed_statuses = [
             self::STATUS_SCHEDULED,
             self::STATUS_QUEUED,
+            self::STATUS_DISPATCHED,
             self::STATUS_RUNNING,
             self::STATUS_COMPLETED,
             self::STATUS_SUSPENDED,
