@@ -38,7 +38,7 @@ class RunTask extends AbstractJob
         } 
         $this->task->refresh();
         if ($this->task->getStatus() != Task::STATUS_DISPATCHED) {
-            throw new \Exception("Task status is not STATUS_DISPATCHED");
+            throw new \Exception("Task #{$this->task->id} status is not STATUS_DISPATCHED");
         }
         $this->logDebug("Running task...");
         $this->task->run();
