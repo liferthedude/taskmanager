@@ -281,15 +281,16 @@ class Task extends AbstractModel
     }
 
     public function scheduleDailyAt(string $time) {
-        list($hours, $minutes) = explode(":",$time);
-        $this->setProperty(self::PROPERTY_SCHEDULE_AT, ['h' => (int) $hours, 'm' => (int) $minutes]);
+        list($hours, $minutes, $seconds) = explode(":",$time);
+        $this->setProperty(self::PROPERTY_SCHEDULE_AT, ['h' => (int) $hours, 'm' => (int) $minutes, 's' => (int) $seconds]);
         $this->setProperty(self::PROPERTY_SCHEDULE_TYPE, self::SCHEDULE_TYPE_DAILY);
         $this->schedule();
         return true;
     }
 
-    public function scheduleHourlyAt(string $minutes) {
-        $this->setProperty(self::PROPERTY_SCHEDULE_AT, ['m' => (int) $minutes]);
+    public function scheduleHourlyAt(string $time) {
+        list($minutes, $seconds) = explode(":",$time);
+        $this->setProperty(self::PROPERTY_SCHEDULE_AT, ['m' => (int) $minutes, 's' => (int) $seconds]);
         $this->setProperty(self::PROPERTY_SCHEDULE_TYPE, self::SCHEDULE_TYPE_HOURLY);
         $this->schedule();
         return true;
@@ -331,22 +332,22 @@ class Task extends AbstractModel
         if (self::SCHEDULE_TYPE_DAILY == $this->getProperty(self::PROPERTY_SCHEDULE_TYPE)) {
             $at = $this->getProperty(self::PROPERTY_SCHEDULE_AT);
             if (empty($at)) {
-                $at = ['h'=>0,'m'=>0];
+                $at = ['h'=>0,'m'=>0,'s'=>0];
             }
-            if (now() < now()->startOfDay()->addHours($at['h'])->addMinutes($at['m'])) {
-                $this->scheduled_at = now()->startOfDay()->addHours($at['h'])->addMinutes($at['m']);
+            if (now() < now()->startOfDay()->addHours($at['h'])->addMinutes($at['m'])->addSeconds($at['s'])) {
+                $this->scheduled_at = now()->startOfDay()->addHours($at['h'])->addMinutes($at['m'])->addSeconds($at['s']);
             } else {
-                $this->scheduled_at = now()->startOfDay()->addDays(1)->addHours($at['h'])->addMinutes($at['m']);
+                $this->scheduled_at = now()->startOfDay()->addDays(1)->addHours($at['h'])->addMinutes($at['m'])->addSeconds($at['s']);
             }
         } elseif (self::SCHEDULE_TYPE_HOURLY == $this->getProperty(self::PROPERTY_SCHEDULE_TYPE)) {
             $at = $this->getProperty(self::PROPERTY_SCHEDULE_AT);
             if (empty($at)) {
-                $at = ['m'=>0];
+                $at = ['m'=>0,'s'=>0];
             }
-            if (now() < now()->startOfHour()->addMinutes($at['m'])) {
-                $this->scheduled_at = now()->startOfHour()->addMinutes($at['m']);
+            if (now() < now()->startOfHour()->addMinutes($at['m'])->addSeconds($at['s'])) {
+                $this->scheduled_at = now()->startOfHour()->addMinutes($at['m'])->addSeconds($at['s']);
             } else {
-                $this->scheduled_at = now()->startOfHour()->addHours(1)->addMinutes($at['m']);
+                $this->scheduled_at = now()->startOfHour()->addHours(1)->addMinutes($at['m'])->addSeconds($at['s']);
             }
         } elseif (self::SCHEDULE_TYPE_EVERY_N_MINUTES == $this->getProperty(self::PROPERTY_SCHEDULE_TYPE)) {
                 $this->scheduled_at = now()->addMinutes($this->getProperty(self::PROPERTY_SCHEDULE_PERIOD_DURATION));
