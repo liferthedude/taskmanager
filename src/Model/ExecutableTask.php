@@ -28,6 +28,9 @@ abstract class ExecutableTask
     public function __construct(Task $task) {
     	$this->task = $task;
         $this->properties = $task->getProperties();
+        if (!empty($this->properties['params'])) {
+            $this->setParams($this->properties['params']);
+        }
         if (!empty($this->task->getConfigName())) {
             $this->setConfig();
         }
