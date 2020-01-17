@@ -5,6 +5,7 @@ namespace Lifer\TaskManager\Services;
 use Lifer\TaskManager\Model\Task;
 use Lifer\TaskManager\Jobs\Manager\RunTask;
 use Lifer\TaskManager\Support\LoggingWithTags;
+
 class TaskManager {
 
 	use LoggingWithTags;

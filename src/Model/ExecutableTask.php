@@ -5,10 +5,11 @@ namespace Lifer\TaskManager\Model;
 use Lifer\TaskManager\Support\LoggingWithTags;
 use Lifer\TaskManager\Model\Task;
 use Lifer\TaskManager\Services\TaskLogFactory;
-
 use Monolog\Logger as Monolog;
 use Monolog\Handler\StreamHandler;
 use Monolog\Formatter\LineFormatter;
+use Throwable;
+use Exception;
 
 abstract class ExecutableTask 
 {
@@ -63,7 +64,7 @@ abstract class ExecutableTask
                 $this->__run();
                 $this->completed();
                 $completed = true;
-            } catch (\Exception $e) {
+            } catch (Exception | Throwable $e) {
                 $this->logError("Exception: ".get_class($e).": ".$e->getMessage());
                 $this->logError($e->getTraceAsString());
             }
