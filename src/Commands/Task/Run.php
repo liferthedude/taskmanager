@@ -54,7 +54,7 @@ class Run extends TaskCommand
         $executableTask = $this->task->getExecutable();
         if (!empty($this->option("params"))) {
             $params = [];
-            $_params = explode(" ", $this->option("params"));
+            $_params = explode(",", $this->option("params"));
             foreach ($_params as $_param) {
                 list($key,$value) = explode(":",$_param);
                 $params[$key] = $value;

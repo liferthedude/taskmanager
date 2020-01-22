@@ -31,18 +31,8 @@ class RunTask extends AbstractJob
      */
     public function handle()
     {
-        $lock = Cache::lock("task:run:".$this->task->id, 5);
-        if (!$lock->get()) {
-            $this->logDebug("Job locked...");
-            return false;
-        } 
-        $this->task->refresh();
-        if ($this->task->getStatus() != Task::STATUS_DISPATCHED) {
-            throw new \Exception("Task #{$this->task->id} status is not STATUS_DISPATCHED");
-        }
         $this->logDebug("Running task...");
         $this->task->run();
-        $lock->release();
         return true;
     }
 }
