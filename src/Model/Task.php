@@ -111,7 +111,7 @@ class Task extends AbstractModel
     }
 
     public function run() {
-        if ($this->getStatus() == self::STATUS_RUNNING) {
+        if ($this->isRunning()) {
             throw new \Exception("Task is already running");
         }
         $environment = \App::environment();
@@ -121,6 +121,16 @@ class Task extends AbstractModel
         } else {
             $executableTask->run();
             $this->schedule();
+        }
+        return true;
+    }
+
+    public function isRunning() {
+        if ($this->getStatus() != self::STATUS_RUNNING) {
+            return false;
+        }
+        if (!empty($this->pid) && !posix_getpgid($this->pid)) {
+            return false;
         }
         return true;
     }
