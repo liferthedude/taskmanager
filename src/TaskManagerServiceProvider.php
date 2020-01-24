@@ -3,6 +3,7 @@
 namespace Lifer\TaskManager;
 
 use Illuminate\Support\ServiceProvider;
+use Lifer\TaskManager\Providers\TaskManagerEventServiceProvider;
 
 class TaskManagerServiceProvider extends ServiceProvider
 {
@@ -32,6 +33,8 @@ class TaskManagerServiceProvider extends ServiceProvider
     public function register()
     {
         $this->mergeConfigFrom(__DIR__.'/../config/taskmanager.php', 'taskmanager');
+
+        $this->app->register(TaskManagerEventServiceProvider::class);
 
         // Register the service the package provides.
         $this->app->singleton('TaskManager', function ($app) {

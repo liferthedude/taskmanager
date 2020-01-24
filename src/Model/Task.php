@@ -278,7 +278,9 @@ class Task extends AbstractModel
         $this->refresh();
         $this->status = self::STATUS_FAILED;
         $this->pid = null;
-        $this->removeSchedule();
+        $this->scheduled_at = null;
+        $this->save();
+        #$this->removeSchedule();
         $this->logError("Task failed",["Task #{$this->id}"]);
     }
 
