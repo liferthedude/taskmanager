@@ -296,6 +296,7 @@ class Task extends AbstractModel
         list($hours, $minutes, $seconds) = explode(":",$time);
         $this->setProperty(self::PROPERTY_SCHEDULE_AT, ['h' => (int) $hours, 'm' => (int) $minutes, 's' => (int) $seconds]);
         $this->setProperty(self::PROPERTY_SCHEDULE_TYPE, self::SCHEDULE_TYPE_DAILY);
+        $this->save();
         $this->schedule();
         return true;
     }
@@ -304,6 +305,7 @@ class Task extends AbstractModel
         list($minutes, $seconds) = explode(":",$time);
         $this->setProperty(self::PROPERTY_SCHEDULE_AT, ['m' => (int) $minutes, 's' => (int) $seconds]);
         $this->setProperty(self::PROPERTY_SCHEDULE_TYPE, self::SCHEDULE_TYPE_HOURLY);
+        $this->save();
         $this->schedule();
         return true;
     }
@@ -311,6 +313,7 @@ class Task extends AbstractModel
     public function scheduleEveryFiveMinutes() {
         $this->setProperty(self::PROPERTY_SCHEDULE_TYPE, self::SCHEDULE_TYPE_EVERY_N_MINUTES);
         $this->setProperty(self::PROPERTY_SCHEDULE_PERIOD_DURATION, 5);
+        $this->save();
         $this->schedule();
         return true;
     }
@@ -338,7 +341,7 @@ class Task extends AbstractModel
         }
 
         if (in_array($this->status,[self::STATUS_RUNNING, self::STATUS_QUEUED])) {
-            throw new \Exception("task status='{$this->status}', can't be scheduled now");
+            return true;
         }
 
         if (self::SCHEDULE_TYPE_DAILY == $this->getProperty(self::PROPERTY_SCHEDULE_TYPE)) {
