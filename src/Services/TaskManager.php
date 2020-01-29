@@ -89,7 +89,12 @@ class TaskManager {
             } else {
                 $this->logDebug("dispatched task #{$task->id} ({$task->name})");
                 $task->setStatus(Task::STATUS_DISPATCHED);
-                RunTask::dispatch($task)->onQueue('tasks');
+                if ($task->getExecutable()->requiresStandaloneProcess()) {
+                	RunTask::dispatch($task)->onConnection('sync');
+                } else {
+                	RunTask::dispatch($task)->onQueue('tasks');
+                }
+                
             }
         }
 	}

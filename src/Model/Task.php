@@ -293,6 +293,7 @@ class Task extends AbstractModel
     }
 
     public function scheduleDailyAt(string $time) {
+        $this->unsetProperty(self::PROPERTY_SCHEDULE);
         list($hours, $minutes, $seconds) = explode(":",$time);
         $this->setProperty(self::PROPERTY_SCHEDULE_AT, ['h' => (int) $hours, 'm' => (int) $minutes, 's' => (int) $seconds]);
         $this->setProperty(self::PROPERTY_SCHEDULE_TYPE, self::SCHEDULE_TYPE_DAILY);
@@ -302,6 +303,7 @@ class Task extends AbstractModel
     }
 
     public function scheduleHourlyAt(string $time) {
+        $this->unsetProperty(self::PROPERTY_SCHEDULE);
         list($minutes, $seconds) = explode(":",$time);
         $this->setProperty(self::PROPERTY_SCHEDULE_AT, ['m' => (int) $minutes, 's' => (int) $seconds]);
         $this->setProperty(self::PROPERTY_SCHEDULE_TYPE, self::SCHEDULE_TYPE_HOURLY);
@@ -311,6 +313,7 @@ class Task extends AbstractModel
     }
 
     public function scheduleEveryFiveMinutes() {
+        $this->unsetProperty(self::PROPERTY_SCHEDULE);
         $this->setProperty(self::PROPERTY_SCHEDULE_TYPE, self::SCHEDULE_TYPE_EVERY_N_MINUTES);
         $this->setProperty(self::PROPERTY_SCHEDULE_PERIOD_DURATION, 5);
         $this->save();
@@ -319,6 +322,7 @@ class Task extends AbstractModel
     }
 
     public function scheduleAt(Carbon $scheduled_at) {
+        $this->unsetProperty(self::PROPERTY_SCHEDULE);
         $this->status = self::STATUS_SCHEDULED;
         $this->scheduled_at = $scheduled_at;
         $this->logDebug("Task scheduled at ".$this->scheduled_at->toDateTimeString(),["Task #{$this->id}"]);
