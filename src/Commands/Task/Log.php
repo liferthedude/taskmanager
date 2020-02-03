@@ -50,12 +50,12 @@ class Log extends TaskCommand
         }
 
         if (!empty($this->option("log_id"))) {
-            $taskLog = $this->task->taskLog()->find($this->option("log_id"));
+            $taskLog = $this->task->taskLogs()->find($this->option("log_id"));
             if (empty($taskLog)) {
                 return $this->error("Task log with ID #{$this->option('log_id')} was not found.");
             }
         } else {
-            $taskLog = $this->task->taskLog()->get()->last();
+            $taskLog = $this->task->taskLogs()->get()->last();
             if (empty($taskLog)) {
                 return $this->comment("Task with ID #{$this->task->getID()} has no logs yet");
             }
@@ -80,7 +80,7 @@ class Log extends TaskCommand
         }
         $this->info("Use --log_id=<log_id> option to see particular log entry");
         $number = (empty($this->option("number"))) ? 10 : (int) $this->option("number");
-        $taskLogs = $this->task->taskLog()->orderBy("created_at","desc")->limit($number)->get();
+        $taskLogs = $this->task->taskLogs()->orderBy("created_at","desc")->limit($number)->get();
         $data = [];
         foreach ($taskLogs as $taskLog) {
             $data[] = [$taskLog->getID(), $this->formatStatus($taskLog->getStatus()), $taskLog->getCreatedAt()];
@@ -91,7 +91,7 @@ class Log extends TaskCommand
     }
 
     protected function follow() {
-        $filename = $this->task->taskLog()->get()->last()->getLogFilename();
+        $filename = $this->task->taskLogs()->get()->last()->getLogFilename();
         system("tail -F $filename");
     }
 

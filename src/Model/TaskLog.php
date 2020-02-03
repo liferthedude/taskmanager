@@ -44,4 +44,9 @@ class TaskLog extends AbstractModel
         $this->save();
     }
 
+    public function delete() {
+        unlink($this->getLogFilename());
+        return parent::delete();
+    }
+
 }

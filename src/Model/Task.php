@@ -47,17 +47,13 @@ class Task extends AbstractModel
         return $this->morphTo();
     }
 
-    public function taskLog()
+    public function taskLogs()
     {
         return $this->hasMany('Lifer\TaskManager\Model\TaskLog');
     }
 
     public function getStatus() {
         return $this->status;
-    }
-
-    public function getConfigName() {
-        return $this->config;
     }
 
     public function setProperty(string $path, $value) {
@@ -212,7 +208,7 @@ class Task extends AbstractModel
             exec("kill -9 {$this->pid}");
         }
 
-        $taskLog = $this->taskLog()->orderBy('id', 'desc')->take(1)->first();
+        $taskLog = $this->taskLogs()->orderBy('id', 'desc')->take(1)->first();
         $taskLog->killed();
 
         $this->status = self::STATUS_KILLED;
@@ -224,7 +220,7 @@ class Task extends AbstractModel
         if ($this->status != self::STATUS_RUNNING) {
             return null;
         }
-        $taskLog = $this->taskLog()->orderBy('id', 'desc')->take(1)->first();
+        $taskLog = $this->taskLogs()->orderBy('id', 'desc')->take(1)->first();
         if (empty($taskLog)) {
             throw new \Exception("task is running and there is no task log. shouldn't happen");
         }
@@ -233,7 +229,7 @@ class Task extends AbstractModel
     }
 
     public function getLastSuccessfulRunTime() {
-        $taskLog = $this->taskLog()->where("status",TaskLog::STATUS_COMPLETED)->orderBy('id', 'desc')->take(1)->first();
+        $taskLog = $this->taskLogs()->where("status",TaskLog::STATUS_COMPLETED)->orderBy('id', 'desc')->take(1)->first();
         if (empty($taskLog)) {
             return null;
         }
@@ -241,7 +237,7 @@ class Task extends AbstractModel
     }
 
     public function getLastCompletedAt() {
-        $taskLog = $this->taskLog()->where("status",TaskLog::STATUS_COMPLETED)->orderBy('id', 'desc')->take(1)->first();
+        $taskLog = $this->taskLogs()->where("status",TaskLog::STATUS_COMPLETED)->orderBy('id', 'desc')->take(1)->first();
         if (empty($taskLog)) {
             return null;
         }
@@ -249,7 +245,7 @@ class Task extends AbstractModel
     }
 
     public function getLastStartedAt() {
-        $taskLog = $this->taskLog()->orderBy('id', 'desc')->take(1)->first();
+        $taskLog = $this->taskLogs()->orderBy('id', 'desc')->take(1)->first();
         if (empty($taskLog)) {
             return null;
         }

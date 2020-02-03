@@ -22,9 +22,9 @@ abstract class ExecutableTask
 
     protected $params = [];
 
-    protected $config = [];
-
 	protected $standalone_process = false;
+
+    protected $taskLog;
 
     public function __construct(Task $task) {
     	$this->task = $task;
@@ -32,21 +32,7 @@ abstract class ExecutableTask
         if (!empty($this->properties['params'])) {
             $this->setParams($this->properties['params']);
         }
-        if (!empty($this->task->getConfigName())) {
-            $this->setConfig();
-        }
     	$this->logging_tags = ["Task #{$task->id}",'Executable',str_replace("App\Model\ExecutableTask\\","",get_class($this))];
-    }
-
-    protected function setConfig() {
-        $filename = base_path("config/tasks_config/{$this->task->getConfigName()}.json");
-        if (!file_exists($filename)) {
-            throw new \Exception("Task config file {$filename} does not exist");
-        }
-        $this->config = json_decode(file_get_contents($filename),true);
-        if (null === $this->config) {
-            throw new \Exception("Task config {$this->task->getConfigName()} is not a valid JSON document");
-        }
     }
 
     public final function run() {
