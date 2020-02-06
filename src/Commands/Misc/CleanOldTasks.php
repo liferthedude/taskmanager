@@ -45,7 +45,12 @@ class CleanOldTasks extends Command
      */
     public function handle()
     {
-        $tasks = Task::whereIn("status",[Task::STATUS_COMPLETED, Task::STATUS_FAILED])->where("updated_at", "<", now()->subDays(config("taskmanager.tasks_storage_period")))->get();
+        if (empty(config("taskmanager.tasks_storage_period_days"))) {
+            $this->comment("config taskmanager.tasks_storage_period_days property is not set");
+            exit;
+        }
+
+        $tasks = Task::whereIn("status",[Task::STATUS_COMPLETED, Task::STATUS_FAILED])->where("updated_at", "<", now()->subDays(config("taskmanager.tasks_storage_period_days")))->get();
         foreach ($tasks as $task) {
             $task_logs = $task->taskLogs()->get();
             foreach ($task_logs as $task_log) {
@@ -55,7 +60,7 @@ class CleanOldTasks extends Command
         }
         $this->logDebug("Cleaned ".count($tasks)." tasks");
 
-        $task_logs = TaskLog::where("updated_at", "<", now()->subDays(config("taskmanager.tasks_storage_period")))->get();
+        $task_logs = TaskLog::where("updated_at", "<", now()->subDays(config("taskmanager.tasks_storage_period_days")))->get();
         foreach ($task_logs as $task_log) {
             $task_log->delete();
         }
