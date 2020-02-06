@@ -16,14 +16,14 @@ class CleanOldTasks extends Command
      *
      * @var string
      */
-    protected $signature = 'clean_old_tasks';
+    protected $signature = 'taskmanager:clean_tasks_and_logs';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Clean old tasks';
+    protected $description = 'Clean old tasks and logs';
 
 
 
@@ -35,7 +35,7 @@ class CleanOldTasks extends Command
     public function __construct()
     {
         parent::__construct();
-        $this->logging_tags = ['CleanOldTasks'];
+        $this->logging_tags = ['CleanOldTasksAndLogs'];
     }
 
     /**
