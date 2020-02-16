@@ -35,7 +35,7 @@ class Clean extends Command
     public function __construct()
     {
         parent::__construct();
-        $this->logging_tags = ['CleanOldTasksAndLogs'];
+        $this->logging_tags = ['taskmanager:clean'];
     }
 
     /**
