@@ -90,7 +90,7 @@ class TaskManagerServiceProvider extends ServiceProvider
             Commands\Task\Log::class,
             Commands\Task\Run::class,
             Commands\Task\TaskList::class,
-            Commands\Misc\CleanOldTasks::class,
+            Commands\Misc\Clean::class,
         ]);
 
         $this->publishes([

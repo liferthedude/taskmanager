@@ -7,7 +7,7 @@ use Lifer\TaskManager\Support\LoggingWithTags;
 use Lifer\TaskManager\Model\Task;
 use Lifer\TaskManager\Model\TaskLog;
 
-class CleanOldTasks extends Command
+class Clean extends Command
 {
 
     use LoggingWithTags;
@@ -16,7 +16,7 @@ class CleanOldTasks extends Command
      *
      * @var string
      */
-    protected $signature = 'taskmanager:clean_tasks_and_logs';
+    protected $signature = 'taskmanager:clean';
 
     /**
      * The console command description.

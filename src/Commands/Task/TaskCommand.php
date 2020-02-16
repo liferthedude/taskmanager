@@ -22,7 +22,7 @@ abstract class TaskCommand extends AbstractCommand
             $this->error("Task with ID #{$this->argument('task_id')} was not found.");
             return false;
         }
-        $this->logging_tags = ["#{$this->task->id}"];
+        $this->logging_tags = ["Task #{$this->task->id}"];
         return true;
     }
 }
