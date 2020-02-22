@@ -53,6 +53,11 @@ class CheckCrashedTasks extends Command
             if (!$task->isRunning()) {
                 $this->logError("Crashed Task ID: {$task->getID()}, Status: {$task->getStatus()}");
             }
+        }          
+
+        $tasks = Task::where("status",Task::STATUS_SCHEDULED)->whereNull("scheduled_at")->get();
+        foreach($tasks as $task) {
+            $this->logError("Crashed Task ID: {$task->getID()}, Task status: STATUS_SCHEDULED and scheduled_at is null");
         }            
         $this->logDebug("done!");           
     }
