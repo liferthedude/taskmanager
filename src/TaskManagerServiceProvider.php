@@ -91,6 +91,7 @@ class TaskManagerServiceProvider extends ServiceProvider
             Commands\Task\Run::class,
             Commands\Task\TaskList::class,
             Commands\Misc\Clean::class,
+            Commands\Misc\CheckCrashedTasks::class,
         ]);
 
         $this->publishes([
