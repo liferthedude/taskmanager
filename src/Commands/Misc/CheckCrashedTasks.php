@@ -47,7 +47,7 @@ class CheckCrashedTasks extends Command
      */
     public function handle()
     {   
-        $tasks = Task::whereIn("status",[Task::STATUS_RUNNING, Task::STATUS_DISPATCHED])->where("updated_at","<",now()->subHours(1))->get();
+        $tasks = Task::whereIn("status",[Task::STATUS_RUNNING, Task::STATUS_DISPATCHED])->where("updated_at","<",now()->subMinutes(1))->get();
 
         foreach($tasks as $task) {
             if (!$task->isRunning()) {
