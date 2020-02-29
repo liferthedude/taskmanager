@@ -29,6 +29,7 @@ class Task extends AbstractModel
     const SCHEDULE_TYPE_DAILY = 'd';
     const SCHEDULE_TYPE_HOURLY = 'h';
     const SCHEDULE_TYPE_EVERY_N_MINUTES = 'nm';
+    const SCHEDULE_TYPE_EVERY_MINUTE = 'm';
 
     const PROPERTY_SCHEDULE = 'sch';
     const PROPERTY_SCHEDULE_TYPE = 'sch.t';
@@ -317,6 +318,14 @@ class Task extends AbstractModel
         return true;
     }
 
+    public function scheduleEveryMinute() {
+        $this->unsetProperty(self::PROPERTY_SCHEDULE);
+        $this->setProperty(self::PROPERTY_SCHEDULE_TYPE, self::SCHEDULE_TYPE_EVERY_MINUTE);
+        $this->save();
+        $this->schedule();
+        return true;
+    }
+
     public function scheduleAt(Carbon $scheduled_at) {
         $this->unsetProperty(self::PROPERTY_SCHEDULE);
         $this->status = self::STATUS_SCHEDULED;
@@ -330,10 +339,6 @@ class Task extends AbstractModel
 
         if (empty($this->getProperty(self::PROPERTY_SCHEDULE_TYPE))) {
             return false;
-        }
-
-        if (self::STATUS_SCHEDULED == $this->status) {
-            return true;
         }
 
         if ($this->hasProperty(self::PROPERTY_MAX_RUNS_NUMBER) && ($this->getProperty(self::PROPERTY_SUCCSESSFUL_RUNS) >= $this->getProperty(self::PROPERTY_MAX_RUNS_NUMBER))) {
@@ -366,6 +371,8 @@ class Task extends AbstractModel
             }
         } elseif (self::SCHEDULE_TYPE_EVERY_N_MINUTES == $this->getProperty(self::PROPERTY_SCHEDULE_TYPE)) {
                 $this->scheduled_at = now()->addMinutes($this->getProperty(self::PROPERTY_SCHEDULE_PERIOD_DURATION));
+        } elseif (self::SCHEDULE_TYPE_EVERY_MINUTE == $this->getProperty(self::PROPERTY_SCHEDULE_TYPE)) {
+                $this->scheduled_at = now()->startOfMinute()->addMinutes(1);
         } else {
             throw new \Exception("schedule type not implemented");
         }
