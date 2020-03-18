@@ -61,11 +61,16 @@ class Run extends TaskCommand
             }
             $executableTask->setParams($params);
         }
-        $executableTask->run();
+        $result = $executableTask->run();
         if (!empty($this->option("schedule"))) {
             $this->task->schedule();
         }
         $lock->release();
-        $this->info("Done!");
+
+        if ($result) {
+            $this->info("Task completed");
+        } else {
+            $this->error("Task failed");
+        }
     }
 }

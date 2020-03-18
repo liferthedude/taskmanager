@@ -61,6 +61,7 @@ abstract class ExecutableTask
             $this->failed();
         }
         $this->removeTaskMonologHandler();
+        return $completed;
     }
 
     abstract protected function __run();
