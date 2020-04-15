@@ -78,7 +78,7 @@ abstract class ExecutableTask
 
     public final function runStandaloneProcess() {
     	$base_path = base_path();
-    	return shell_exec("nohup php {$base_path}/artisan task:run {$this->task->id} --schedule > /dev/null 2>&1 &");
+    	return shell_exec("php {$base_path}/artisan task:run {$this->task->id} --schedule > /dev/null 2>&1 &");
     }
 
     public function requiresStandaloneProcess() {
