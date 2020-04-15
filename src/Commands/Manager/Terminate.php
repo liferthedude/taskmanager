@@ -4,21 +4,21 @@ namespace Lifer\TaskManager\Commands\Manager;
 
 use Illuminate\Console\Command;
 
-class Stop extends Command
+class Terminate extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'manager:stop {--kill}';
+    protected $signature = 'manager:terminate';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Stop execution of tasks';
+    protected $description = 'Terminate the task manager service';
 
     /**
      * Create a new command instance.
@@ -37,14 +37,12 @@ class Stop extends Command
      */
     public function handle()
     {
-        resolve('TaskManager')->stop();
-        $this->comment("Manager stopped.");
-        if (!empty($this->option('kill'))) {
-            $this->comment('TODO: killing active tasks...');
-            $this->info('done!');
+        $pid = resolve("TaskManager")->getPID();
+        $this->info("Sending TERM Signal To Process: {$pid}");
+        if (! posix_kill($pid, SIGTERM)) {
+            $this->error("Failed to kill process: {$pid} (".posix_strerror(posix_get_last_error()).')');
         } else {
-            $this->comment("All active tasks are still running. To kill them run: 'php artisan manager:stop --kill'");
+            $this->info("Done!");
         }
-        
     }
 }

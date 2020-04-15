@@ -14,6 +14,8 @@ class Service extends Command
      */
     protected $signature = 'manager';
 
+    protected $needsTermination = false;
+
     /**
      * The console command description.
      *
@@ -29,6 +31,8 @@ class Service extends Command
     public function __construct()
     {
         parent::__construct();
+        pcntl_async_signals(true);
+        pcntl_signal(SIGTERM, [$this, 'needsTermination']);
     }
 
     /**
@@ -46,6 +50,17 @@ class Service extends Command
                 $manager->doWork();
             }
             sleep(2);
+            if ($this->needsTermination) {
+                $this->terminate();
+            }
         }
+    }
+
+    protected function needsTermination() {
+        $this->needsTermination = true;
+    }
+
+    protected function terminate() {
+        exit;
     }
 }

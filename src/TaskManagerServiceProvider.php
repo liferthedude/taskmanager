@@ -85,6 +85,7 @@ class TaskManagerServiceProvider extends ServiceProvider
             Commands\Manager\Start::class,
             Commands\Manager\Stop::class,
             Commands\Manager\Status::class,
+            Commands\Manager\Terminate::class,
             Commands\Task\Fake::class,
             Commands\Task\Kill::class,
             Commands\Task\Log::class,
