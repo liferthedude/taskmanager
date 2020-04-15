@@ -30,12 +30,10 @@ class Run extends TaskCommand
      */
     public function __construct()
     {
-        pcntl_async_signals(true);
-        pcntl_signal(SIGTERM, [$this, 'doNothing']);
         parent::__construct();
+        $otherGroup = posix_getpgid(posix_getppid());
+        posix_setpgid(getmypid(), $otherGroup);
     }
-
-    protected function doNothing() {}
 
     /**
      * Execute the console command.
