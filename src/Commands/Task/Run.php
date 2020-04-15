@@ -30,8 +30,12 @@ class Run extends TaskCommand
      */
     public function __construct()
     {
+        pcntl_async_signals(true);
+        pcntl_signal(SIGTERM, [$this, 'doNothing']);
         parent::__construct();
     }
+
+    protected function doNothing() {}
 
     /**
      * Execute the console command.
