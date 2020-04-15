@@ -78,7 +78,9 @@ abstract class ExecutableTask
 
     public final function runStandaloneProcess() {
     	$base_path = base_path();
-    	return shell_exec("php {$base_path}/artisan task:run {$this->task->id} --schedule > /dev/null 2>&1 &");
+    	$pid = (int) exec("php {$base_path}/artisan task:run {$this->task->id} --schedule > /dev/null 2>&1 & echo $!;");
+        $otherGroup = posix_getpgid(posix_getppid());
+        posix_setpgid($pid, $otherGroup);
     }
 
     public function requiresStandaloneProcess() {

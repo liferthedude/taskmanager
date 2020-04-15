@@ -31,8 +31,6 @@ class Run extends TaskCommand
     public function __construct()
     {
         parent::__construct();
-        $otherGroup = posix_getpgid(posix_getppid());
-        posix_setpgid(getmypid(), $otherGroup);
     }
 
     /**
