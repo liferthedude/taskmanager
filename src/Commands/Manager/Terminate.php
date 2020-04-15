@@ -3,6 +3,7 @@
 namespace Lifer\TaskManager\Commands\Manager;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 
 class Terminate extends Command
 {
@@ -37,12 +38,8 @@ class Terminate extends Command
      */
     public function handle()
     {
-        $pid = resolve("TaskManager")->getPID();
-        $this->info("Sending TERM Signal To Process: {$pid}");
-        if (! posix_kill($pid, SIGTERM)) {
-            $this->error("Failed to kill process: {$pid} (".posix_strerror(posix_get_last_error()).')');
-        } else {
-            $this->info("Done!");
-        }
+        Cache::forever("taskmanager:terminate",true);
+        $this->info("Done!");
     }
+
 }

@@ -3,6 +3,7 @@
 namespace Lifer\TaskManager\Commands\Manager;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 
 
 class Service extends Command
@@ -13,8 +14,6 @@ class Service extends Command
      * @var string
      */
     protected $signature = 'manager';
-
-    protected $needsTermination = false;
 
     /**
      * The console command description.
@@ -31,8 +30,6 @@ class Service extends Command
     public function __construct()
     {
         parent::__construct();
-        pcntl_async_signals(true);
-        pcntl_signal(SIGTERM, [$this, 'needsTermination']);
     }
 
     /**
@@ -50,17 +47,10 @@ class Service extends Command
                 $manager->doWork();
             }
             sleep(2);
-            if ($this->needsTermination) {
-                $this->terminate();
+            if (Cache::has("taskmanager:terminate")) {
+                Cache::forget("taskmanager:terminate");
+                exit;
             }
         }
-    }
-
-    protected function needsTermination() {
-        $this->needsTermination = true;
-    }
-
-    protected function terminate() {
-        exit;
     }
 }
