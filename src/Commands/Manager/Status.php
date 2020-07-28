@@ -57,14 +57,6 @@ class Status extends AbstractCommand
         $this->table(null,$data,'compact');
         $this->output->newLine();
 
-        $this->info("Tasks processed during last 24 hours:");
-
-        $data = [];
-        $data[] = ["Completed", TaskLog::where("status", TaskLog::STATUS_COMPLETED)->count()];
-        $data[] = ["Failed", TaskLog::where("status", TaskLog::STATUS_FAILED)->count()];
-        $data[] = ["Killed", TaskLog::where("status", TaskLog::STATUS_KILLED)->count()];
-        $this->table(null,$data);
-        $this->output->newLine();
     
     }
 }
