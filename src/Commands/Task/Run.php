@@ -14,7 +14,7 @@ class Run extends TaskCommand
      *
      * @var string
      */
-    protected $signature = 'task:run {task_id} {--schedule} {--params=}';
+    protected $signature = 'task:run {task_id} {--no_schedule} {--params=}';
 
     /**
      * The console command description.
@@ -62,7 +62,7 @@ class Run extends TaskCommand
             $executableTask->setParams($params);
         }
         $result = $executableTask->run();
-        if (!empty($this->option("schedule"))) {
+        if (empty($this->option("no_schedule"))) {
             $this->task->schedule();
         }
         $lock->release();
