@@ -12,6 +12,7 @@ class CheckCrashedTasks extends Command
     use LoggingWithTags;
 
     const DISPATCHED_THRESHOLD_MINUTES = 120;
+    const RUNNING_THRESHOLD_MINUTES = 15;
 
     /**
      * The name and signature of the console command.
@@ -47,7 +48,7 @@ class CheckCrashedTasks extends Command
      */
     public function handle()
     {   
-        $tasks = Task::where("status", Task::STATUS_RUNNING)->where("updated_at","<",now()->subSeconds(5))->get();
+        $tasks = Task::where("status", Task::STATUS_RUNNING)->where("updated_at","<",now()->subMinutes(self::RUNNING_THRESHOLD_MINUTES))->get();
         foreach($tasks as $task) {
             if (!$task->isRunning()) {
                 $this->logError("Task #{$task->getID()} has status RUNNING but is not actually running");
