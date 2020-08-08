@@ -86,6 +86,10 @@ class Task extends AbstractModel
         $this->name = $name;
     }
 
+    public function getName() {
+        return $this->name;
+    }
+
     public function setStatus(string $status) {
         $allowed_statuses = [
             self::STATUS_SCHEDULED,
