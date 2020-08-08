@@ -11,7 +11,10 @@ class CheckCrashedTasks extends Command
 
     use LoggingWithTags;
 
-    const LAST_N_HOURS = 2;
+    const RUNNING_THRESHOLD_MINUTES = 1;
+    const DISPATCHED_THRESHOLD_MINUTES = 120;
+
+
 
     /**
      * The name and signature of the console command.
@@ -47,17 +50,22 @@ class CheckCrashedTasks extends Command
      */
     public function handle()
     {   
-        $tasks = Task::whereIn("status",[Task::STATUS_RUNNING, Task::STATUS_DISPATCHED])->where("updated_at","<",now()->subMinutes(1))->get();
-
+        $tasks = Task::where("status", Task::STATUS_RUNNING)->where("updated_at","<",now()->subMinutes(self::RUNNING_THRESHOLD_MINUTES))->get();
         foreach($tasks as $task) {
             if (!$task->isRunning()) {
-                $this->logError("Crashed Task ID: {$task->getID()}, Status: {$task->getStatus()}");
+                $this->logError("Task #{$task->getID()} has status RUNNING but is not actually running");
             }
-        }          
+        }   
+
+        $tasks = Task::where("status", Task::STATUS_DISPATCHED)->where("updated_at","<",now()->subMinutes(self::DISPATCHED_THRESHOLD_MINUTES))->get();
+        foreach($tasks as $task) {
+            $minutes = now()->diffInMinutes($task->updated_at);
+            $this->logError("Task #{$task->getID()} has status DISPATCHED for {$minutes} minutes");
+        }       
 
         $tasks = Task::where("status",Task::STATUS_SCHEDULED)->whereNull("scheduled_at")->get();
         foreach($tasks as $task) {
-            $this->logError("Crashed Task ID: {$task->getID()}, Task status: STATUS_SCHEDULED and scheduled_at is null");
+            $this->logError("Task #{$task->getID()} has status SCHEDULED but scheduled_at is null");
         }            
         $this->logDebug("done!");           
     }
