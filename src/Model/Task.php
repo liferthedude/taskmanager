@@ -6,6 +6,7 @@ use Lifer\TaskManager\Model\AbstractModel;
 use Lifer\TaskManager\Services\ExecutableTaskFactory;
 use Lifer\TaskManager\Model\TaskLog;
 use Lifer\TaskManager\Model\TaskException;
+use Lifer\TaskManager\Model\ExecutableTask;
 use Illuminate\Support\Arr;
 use Carbon\Carbon;
 
@@ -53,11 +54,11 @@ class Task extends AbstractModel
         return $this->hasMany('Lifer\TaskManager\Model\TaskLog');
     }
 
-    public function getStatus() {
+    public function getStatus(): string {
         return $this->status;
     }
 
-    public function setProperty(string $path, $value) {
+    public function setProperty(string $path, $value): void {
         $properties = $this->properties;
         if (!is_null($value)) {
             Arr::set($properties, $path, $value);
@@ -67,30 +68,29 @@ class Task extends AbstractModel
             eval($cmd);
         }
         $this->properties = $properties;
-        return true;
     }
 
-    public function unsetProperty(string $path) {
-        return $this->setProperty($path, null);
+    public function unsetProperty(string $path): void {
+        $this->setProperty($path, null);
     }
 
     public function getProperty(string $path) {
         return Arr::get($this->properties, $path);
     }
 
-    public function hasProperty(string $path) {
+    public function hasProperty(string $path): bool {
         return !empty($this->getProperty($path));
     }
 
-    public function setName(string $name) {
+    public function setName(string $name): void {
         $this->name = $name;
     }
 
-    public function getName() {
+    public function getName(): string {
         return $this->name;
     }
 
-    public function setStatus(string $status) {
+    public function setStatus(string $status): void {
         $allowed_statuses = [
             self::STATUS_SCHEDULED,
             self::STATUS_QUEUED,
@@ -104,14 +104,14 @@ class Task extends AbstractModel
             throw new \Exception("unknown status: {$status}");
         }
         if ($this->status == $status) {
-            return true;
+            return;
         }
         $this->status = $status;
         $this->save();
         $this->logDebug("Task status is set to '{$status}'",["Task #{$this->id}"]);
     }
 
-    public function run() {
+    public function run(): void {
         if ($this->isRunning()) {
             throw new \Exception("Task is already running");
         }
@@ -123,10 +123,9 @@ class Task extends AbstractModel
             $executableTask->run();
             $this->schedule();
         }
-        return true;
     }
 
-    public function isRunning() {
+    public function isRunning(): bool {
         if ($this->getStatus() != self::STATUS_RUNNING) {
             return false;
         }
@@ -136,7 +135,7 @@ class Task extends AbstractModel
         return true;
     }
 
-    public function getExecutable() {
+    public function getExecutable(): ExecutableTask {
         return ExecutableTaskFactory::create($this);
     }
 
@@ -144,15 +143,15 @@ class Task extends AbstractModel
         return $this->properties;
     }
 
-    public function getScheduledAt() {
+    public function getScheduledAt(): ?Carbon {
         return $this->scheduled_at;
     }
 
-    public function isScheduled() {
+    public function isScheduled(): bool {
         return !empty($this->scheduled_at);
     }
 
-    public function startsAfter(Task $task) {
+    public function startsAfter(Task $task): void {
         if ($task->id == $this->id) {
             throw new \Exception("lol what?");
         }
@@ -162,7 +161,7 @@ class Task extends AbstractModel
         $this->save();
     }
 
-    public function startsTogetherWith(Task $task) {
+    public function startsTogetherWith(Task $task): void {
         if ($task->id == $this->id) {
             throw new \Exception("lol what?");
         }
@@ -172,14 +171,14 @@ class Task extends AbstractModel
         $this->save();
     }
 
-    public function getStartsAfter() {
+    public function getStartsAfter(): ?Task {
         if (!empty($this->properties[self::STARTS_AFTER])) {
             return self::find($this->properties[self::STARTS_AFTER]);
         }
         return null;
     }
 
-    public function getStartsTogetherWith() {
+    public function getStartsTogetherWith(): ?Task {
         if (!empty($this->properties[self::STARTS_TOGETHER_WITH])) {
             return self::find($this->properties[self::STARTS_TOGETHER_WITH]);
         }
@@ -190,16 +189,16 @@ class Task extends AbstractModel
         return $this->getExecutable()->getDetails();
     }
 
-    public function setPID($pid) {
+    public function setPID($pid): void {
         $this->pid = $pid;
         $this->save();
     }
 
-    public function getPID() {
+    public function getPID(): ?int {
         return $this->pid;
     }
 
-    public function kill() {
+    public function kill(): void {
         if ($this->status != self::STATUS_RUNNING) {
             throw new TaskException("Task #{$this->id} is not running now");
         }
@@ -221,7 +220,7 @@ class Task extends AbstractModel
         $this->logDebug("Task killed",["Task #{$this->id}"]);
     }
 
-    public function getCurrentRunDuration() {
+    public function getCurrentRunDuration(): ?string {
         if ($this->status != self::STATUS_RUNNING) {
             return null;
         }
@@ -233,7 +232,7 @@ class Task extends AbstractModel
         return gmdate("H:i:s", $runtime_duration);
     }
 
-    public function getLastSuccessfulRunTime() {
+    public function getLastSuccessfulRunTime(): ?Carbon {
         $taskLog = $this->taskLogs()->where("status",TaskLog::STATUS_COMPLETED)->orderBy('id', 'desc')->take(1)->first();
         if (empty($taskLog)) {
             return null;
@@ -241,7 +240,7 @@ class Task extends AbstractModel
         return $taskLog->created_at;
     }
 
-    public function getLastCompletedAt() {
+    public function getLastCompletedAt(): ?Carbon {
         $taskLog = $this->taskLogs()->where("status",TaskLog::STATUS_COMPLETED)->orderBy('id', 'desc')->take(1)->first();
         if (empty($taskLog)) {
             return null;
@@ -249,7 +248,7 @@ class Task extends AbstractModel
         return $taskLog->completed_at;
     }
 
-    public function getLastStartedAt() {
+    public function getLastStartedAt(): ?Carbon {
         $taskLog = $this->taskLogs()->orderBy('id', 'desc')->take(1)->first();
         if (empty($taskLog)) {
             return null;
@@ -257,13 +256,12 @@ class Task extends AbstractModel
         return $taskLog->created_at;
     }
 
-    public function setMaxRunsNumber(int $number) {
+    public function setMaxRunsNumber(int $number): void {
         $this->setProperty(self::PROPERTY_MAX_RUNS_NUMBER, $number);
         $this->save();
-        return true;
     }
 
-    public function completed() {
+    public function completed(): void {
         $this->refresh();
         if ($this->status != self::STATUS_SUSPENDED) {
             $this->status = self::STATUS_COMPLETED;
@@ -275,7 +273,7 @@ class Task extends AbstractModel
         $this->logDebug("Task completed",["Task #{$this->id}"]);
     }
 
-    public function failed() {
+    public function failed(): void {
         $this->refresh();
         $this->status = self::STATUS_FAILED;
         $this->pid = null;
@@ -285,7 +283,7 @@ class Task extends AbstractModel
         $this->logError("Task failed",["Task #{$this->id}"]);
     }
 
-    public function removeSchedule() {
+    public function removeSchedule(): void {
         $this->refresh();
         $this->unsetProperty(self::PROPERTY_SCHEDULE);
         $this->scheduled_at = null;
@@ -293,53 +291,48 @@ class Task extends AbstractModel
         $this->logDebug("Task schedule removed",["Task #{$this->id}"]);
     }
 
-    public function scheduleDailyAt(string $time) {
+    public function scheduleDailyAt(string $time): void {
         $this->unsetProperty(self::PROPERTY_SCHEDULE);
         list($hours, $minutes, $seconds) = explode(":",$time);
         $this->setProperty(self::PROPERTY_SCHEDULE_AT, ['h' => (int) $hours, 'm' => (int) $minutes, 's' => (int) $seconds]);
         $this->setProperty(self::PROPERTY_SCHEDULE_TYPE, self::SCHEDULE_TYPE_DAILY);
         $this->save();
         $this->schedule();
-        return true;
     }
 
-    public function scheduleHourlyAt(string $time) {
+    public function scheduleHourlyAt(string $time): void {
         $this->unsetProperty(self::PROPERTY_SCHEDULE);
         list($minutes, $seconds) = explode(":",$time);
         $this->setProperty(self::PROPERTY_SCHEDULE_AT, ['m' => (int) $minutes, 's' => (int) $seconds]);
         $this->setProperty(self::PROPERTY_SCHEDULE_TYPE, self::SCHEDULE_TYPE_HOURLY);
         $this->save();
         $this->schedule();
-        return true;
     }
 
-    public function scheduleEveryFiveMinutes() {
+    public function scheduleEveryFiveMinutes(): void {
         $this->unsetProperty(self::PROPERTY_SCHEDULE);
         $this->setProperty(self::PROPERTY_SCHEDULE_TYPE, self::SCHEDULE_TYPE_EVERY_N_MINUTES);
         $this->setProperty(self::PROPERTY_SCHEDULE_PERIOD_DURATION, 5);
         $this->save();
         $this->schedule();
-        return true;
     }
 
-    public function scheduleEveryMinute() {
+    public function scheduleEveryMinute(): void {
         $this->unsetProperty(self::PROPERTY_SCHEDULE);
         $this->setProperty(self::PROPERTY_SCHEDULE_TYPE, self::SCHEDULE_TYPE_EVERY_MINUTE);
         $this->save();
         $this->schedule();
-        return true;
     }
 
-    public function scheduleAt(Carbon $scheduled_at) {
+    public function scheduleAt(Carbon $scheduled_at): void {
         $this->unsetProperty(self::PROPERTY_SCHEDULE);
         $this->status = self::STATUS_SCHEDULED;
         $this->scheduled_at = $scheduled_at;
         $this->logDebug("Task scheduled at ".$this->scheduled_at->toDateTimeString(),["Task #{$this->id}"]);
         $this->save();
-        return true;
     }
 
-    public function schedule() {
+    public function schedule(): bool {
 
         if (empty($this->getProperty(self::PROPERTY_SCHEDULE_TYPE))) {
             return false;

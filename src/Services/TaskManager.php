@@ -20,17 +20,17 @@ class TaskManager {
 		$this->logging_tags = ['TaskManager'];
 	}
 
-	public function start() {
+	public function start(): void {
 		$this->state[self::STATE_STARTED] = true;
 		$this->saveState();
 	}
 
-	public function stop() {
+	public function stop(): void {
 		$this->state[self::STATE_STARTED] = false;
 		$this->saveState();
 	}
 
-	public function loadState() {
+	public function loadState(): void {
 		if (file_exists($this->getStateFilePath())) {
 			$this->state = json_decode(file_get_contents($this->getStateFilePath()), true);
 		} else {
@@ -38,31 +38,31 @@ class TaskManager {
 		}
 	}
 
-	protected function getStateFilePath() {
+	protected function getStateFilePath(): string {
 		return storage_path("taskmanager.state");
 	}
 
-	protected function saveState() {
+	protected function saveState(): void {
 		file_put_contents($this->getStateFilePath(), json_encode($this->state));
 	}
 
-	public function isStarted() {
+	public function isStarted(): bool {
 		return (!empty($this->state[self::STATE_STARTED]));
 	}
 
-	public function setPID($pid) {
+	public function setPID($pid): void {
 		$this->state[self::STATE_PID] = $pid;
 		$this->saveState();
 	}
 
-	public function getPID() {
+	public function getPID(): ?int {
 		if (!empty($this->state[self::STATE_PID])) {
 			return $this->state[self::STATE_PID];
 		}
 		return null;
 	}
 
-	public function doWork() {
+	public function doWork(): void {
 		$this->logging_tags = ['TaskManager','DoWork'];
 		$tasks = Task::where("scheduled_at","<=", now())->whereIn("status",[Task::STATUS_SCHEDULED, Task::STATUS_QUEUED])->get();
 

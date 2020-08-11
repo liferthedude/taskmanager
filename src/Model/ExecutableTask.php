@@ -35,7 +35,7 @@ abstract class ExecutableTask
     	$this->logging_tags = ["Task #{$task->id}",'Executable',str_replace("App\Model\ExecutableTask\\","",get_class($this))];
     }
 
-    public final function run() {
+    public final function run(): bool {
         $this->task->setStatus(Task::STATUS_RUNNING);
         $this->task->setPID(getmypid());
         $this->taskLog = TaskLogFactory::new($this->task);
@@ -64,42 +64,42 @@ abstract class ExecutableTask
         return $completed;
     }
 
-    abstract protected function __run();
+    abstract protected function __run(): void;
 
-    protected function failed() {
+    protected function failed(): void {
         $this->taskLog->failed();
         $this->task->failed();
     }
 
-    protected function completed() {
+    protected function completed(): void {
         $this->taskLog->completed();
         $this->task->completed();
     }
 
-    public final function runStandaloneProcess() {
+    public final function runStandaloneProcess(): void {
     	$base_path = base_path();
-    	return shell_exec("php {$base_path}/artisan task:run {$this->task->id} > /dev/null 2>&1 &");
+    	shell_exec("php {$base_path}/artisan task:run {$this->task->id} > /dev/null 2>&1 &");
     }
 
-    public function requiresStandaloneProcess() {
+    public function requiresStandaloneProcess(): bool {
         return (!empty($this->standalone_process));
     }
 
-    protected function addTaskMonologHandler() {
+    protected function addTaskMonologHandler(): void {
         $handler = new StreamHandler( $this->taskLog->getLogFilename(), Monolog::DEBUG);
         $handler->setFormatter(new LineFormatter(null, 'Y-m-d H:i:s', true, true));
         $monolog = \Log::getLogger();
         $monolog->pushHandler($handler);
     }
 
-    protected function removeTaskMonologHandler() {
+    protected function removeTaskMonologHandler(): void {
         $monolog = \Log::getLogger();
         $monolog->popHandler();
     }
 
     public function getDetails() {}
 
-    public function setParams(array $params) {
+    public function setParams(array $params): void {
         foreach ($params as $key => $value) {
             $this->params[$key] = $value;
         }

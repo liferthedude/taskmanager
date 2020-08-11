@@ -12,12 +12,12 @@ class JobHasFailed
 
     use LoggingWithTags;
 
-    public function handle(JobFailed $event)
+    public function handle(JobFailed $event): void
     {
     	$body = json_decode($event->job->getRawBody(),true);
     	$job = unserialize($body['data']['command']);
     	if (!$job instanceof RunTask) {
-    		return true;
+    		return;
     	}
     	$task = $job->getTask();
     	$task->failed();

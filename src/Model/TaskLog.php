@@ -20,26 +20,26 @@ class TaskLog extends AbstractModel
         return $this->belongsTo('App\Model\Task');
     }
 
-    public function getLogFilename() {
+    public function getLogFilename(): string {
         return storage_path("logs/tasks/{$this->getID()}.log");
     }
 
-    public function getLogContents() {
+    public function getLogContents(): string {
     	return file_get_contents($this->getLogFilename());
     }
 
-    public function completed() {
+    public function completed(): void {
         $this->status = self::STATUS_COMPLETED;
         $this->completed_at = now();
         $this->save();
     }
 
-    public function failed() {
+    public function failed(): void {
         $this->status = self::STATUS_FAILED;
         $this->save();
     }
 
-    public function killed() {
+    public function killed(): void {
         $this->status = self::STATUS_KILLED;
         $this->save();
     }

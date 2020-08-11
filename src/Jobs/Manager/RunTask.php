@@ -33,10 +33,9 @@ class RunTask extends AbstractJob
      *
      * @return void
      */
-    public function handle()
+    public function handle(): void
     {     
         $this->logDebug("Running task...");
         $this->task->run();
-        return true;
     }
 }

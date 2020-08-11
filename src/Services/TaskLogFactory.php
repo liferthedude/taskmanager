@@ -7,7 +7,7 @@ use Lifer\TaskManager\Model\TaskLog;
 
 class TaskLogFactory {
 
-	public static function new(Task $task) {
+	public static function new(Task $task): TaskLog {
 		return $task->taskLogs()->create([
 			'status' => TaskLog::STATUS_RUNNING
 		]);
