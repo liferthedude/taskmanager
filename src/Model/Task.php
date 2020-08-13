@@ -328,8 +328,8 @@ class Task extends AbstractModel
         $this->unsetProperty(self::PROPERTY_SCHEDULE);
         $this->status = self::STATUS_SCHEDULED;
         $this->scheduled_at = $scheduled_at;
-        $this->logDebug("Task scheduled at ".$this->scheduled_at->toDateTimeString(),["Task #{$this->id}"]);
         $this->save();
+        $this->logDebug("Task scheduled at ".$this->scheduled_at->toDateTimeString(),["Task #{$this->id}"]);
     }
 
     public function schedule(): bool {
@@ -374,9 +374,9 @@ class Task extends AbstractModel
             throw new \Exception("schedule type not implemented");
         }
 
-        $this->logDebug("Task scheduled at ".$this->scheduled_at->toDateTimeString(),["Task #{$this->id}"]);
         $this->status = self::STATUS_SCHEDULED;
         $this->save();
+        $this->logDebug("Task scheduled at ".$this->scheduled_at->toDateTimeString(),["Task #{$this->id}"]);
         return true;
     }
 }
