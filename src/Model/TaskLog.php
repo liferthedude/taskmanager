@@ -15,6 +15,10 @@ class TaskLog extends AbstractModel
     const STATUS_RUNNING = 'running';
     const STATUS_KILLED = 'killed';
 
+    protected $casts = [
+        'completed_at' => 'datetime'
+    ];
+
     public function task()
     {
         return $this->belongsTo('App\Model\Task');

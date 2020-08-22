@@ -3,6 +3,7 @@
 namespace Lifer\TaskManager\Commands\Task;
 
 use Lifer\TaskManager\Commands\Task\TaskCommand;
+use Lifer\TaskManager\Model\TaskLog;
 
 class Log extends TaskCommand
 {
@@ -60,12 +61,22 @@ class Log extends TaskCommand
                 return $this->comment("Task with ID #{$this->task->getID()} has no logs yet");
             }
         }
+
+
+
         $this->output->newLine();
-        $this->info("Task ID: {$this->task->getID()}");
-        $this->info("Task log ID: {$taskLog->getID()}");
-        $this->info("Task started at: {$taskLog->getCreatedAt()}");
+        $data = [];
+        $data[] = ["Task ID","{$this->task->getID()}"];
+        $data[] = ["Log ID ","{$taskLog->getID()}"];
+        $data[] = ["Started at","{$taskLog->getCreatedAt()}"];
+        $data[] = ["Status","{$this->formatStatus($taskLog->getStatus())}"];
+        $data[] = ["Execution time","{$this->getExecutionTime($taskLog)}"];
+
+        $this->info("Summary:");
+        $this->table(null, $data);
+
         $this->output->newLine();
-        $this->info("Task run log:");
+        $this->info("Run log:");
         $this->comment(str_repeat('-', 100));
         echo $taskLog->getLogContents();
         $this->comment(str_repeat('-', 100));
@@ -83,16 +94,27 @@ class Log extends TaskCommand
         $taskLogs = $this->task->taskLogs()->orderBy("created_at","desc")->limit($number)->get();
         $data = [];
         foreach ($taskLogs as $taskLog) {
-            $data[] = [$taskLog->getID(), $this->formatStatus($taskLog->getStatus()), $taskLog->getCreatedAt()];
+            $data[] = [$taskLog->getID(), $this->formatStatus($taskLog->getStatus()), $taskLog->getCreatedAt(),$this->getExecutionTime($taskLog)];
         }
 
-        $headers = ['Task log ID', 'Status','Started at'];
+        $headers = ['Task log ID', 'Status','Started at','Execution time'];
         $this->table($headers, $data);
     }
 
     protected function follow() {
         $filename = $this->task->taskLogs()->get()->last()->getLogFilename();
         system("tail -F $filename");
+    }
+
+    protected function getExecutionTime(TaskLog $taskLog) {
+        $from = $taskLog->created_at;
+        if ($taskLog->getStatus() == TaskLog::STATUS_COMPLETED) {
+            $to = $taskLog->completed_at;
+        } else {
+            $to = now();
+        }
+        $diff = $to->diffInSeconds($from);
+        return sprintf('%02d:%02d:%02d', ($diff/3600),($diff/60%60), $diff%60);
     }
 
 }
