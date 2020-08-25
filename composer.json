@@ -11,9 +11,6 @@
     ],
     "homepage": "https://github.com/liferthedude/taskmanager",
     "keywords": ["Laravel", "TaskManager"],
-    "require": {
-        "illuminate/support": "6.x"
-    },
     "require-dev": {
         "phpunit/phpunit": "~7.0",
         "mockery/mockery": "^1.1",
