@@ -32,7 +32,7 @@ abstract class ExecutableTask
         if (!empty($this->properties['params'])) {
             $this->setParams($this->properties['params']);
         }
-    	$this->logging_tags = ["Task #{$task->id}",'Executable',str_replace("App\Model\ExecutableTask\\","",get_class($this))];
+    	$this->logging_tags = ["Task #{$task->id}",'Executable',str_replace(config("taskmanager.executable_tasks_namespace"),"",get_class($this))];
     }
 
     public final function run(): bool {
