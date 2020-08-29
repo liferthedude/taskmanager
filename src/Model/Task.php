@@ -263,11 +263,11 @@ class Task extends AbstractModel
 
     public function completed(): void {
         $this->refresh();
-        if ($this->status != self::STATUS_SUSPENDED) {
+        if (!in_array($this->status, [self::STATUS_SUSPENDED,self::STATUS_SCHEDULED])) {
             $this->status = self::STATUS_COMPLETED;
+            $this->scheduled_at = null;
         }
         $this->pid = null;
-        $this->scheduled_at = null;
         $this->setProperty(self::PROPERTY_SUCCSESSFUL_RUNS, (int) $this->getProperty(self::PROPERTY_SUCCSESSFUL_RUNS)+1);
         $this->save();
         $this->logDebug("Task completed",["Task #{$this->id}"]);
@@ -342,7 +342,7 @@ class Task extends AbstractModel
             return false;
         }
 
-        if (in_array($this->status,[self::STATUS_RUNNING, self::STATUS_QUEUED])) {
+        if (in_array($this->status,[self::STATUS_RUNNING, self::STATUS_QUEUED, self::STATUS_SCHEDULED])) {
             return true;
         }
 

@@ -92,7 +92,7 @@ class TaskManager {
                 if ($task->getExecutable()->requiresStandaloneProcess()) {
                 	RunTask::dispatch($task)->onConnection('sync');
                 } else {
-                	RunTask::dispatch($task)->onQueue('tasks');
+                	RunTask::dispatch($task)->onQueue(config("taskmanager.queue"));
                 }
                 
             }
